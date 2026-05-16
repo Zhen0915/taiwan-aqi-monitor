@@ -17,7 +17,7 @@ def safe_int(value, default=0):
 def fetch_live_aqi_csv_data():
     """下載政府即時 CSV 檔案並寫入資料庫"""
     print("🚀 正在連線環境部下載全台即時空氣品質 CSV 檔案...")
-    csv_url = "https://data.moenv.gov.tw/api/v2/aqx_p_432?api_key=e8dd42e6-9b8b-43f8-983e-e86bc6a31c3f&limit=1000&sort=ImportDate desc&format=CSV"
+    csv_url = "https://data.moenv.gov.tw/api/v2/aqx_p_432?api_key=e75b1660-e564-4107-aad5-a8be1f905dd9&limit=1000&sort=ImportDate desc&format=CSV"
     
     response = requests.get(csv_url, timeout=15, verify=False)
     if response.status_code != 200:
