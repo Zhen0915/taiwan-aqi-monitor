@@ -10,6 +10,7 @@ from crawler import fetch_live_aqi_csv_data
 
 app = Flask(__name__)
 
+# 資料庫設定
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
     'DATABASE_URL', 
     'postgresql://zhen:caIZBXsNJJD4FENZn9FiSr5QqLrqQRdF@dpg-d846lk0jo89c73ajcf9g-a.singapore-postgres.render.com/traffic_data_09yl?sslmode=require'
@@ -18,24 +19,27 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-# ====================== 定時更新功能 ======================
+# ====================== 定時更新排程 ======================
 scheduler = BackgroundScheduler()
 
 def update_aqi_data():
     """背景定時更新空氣品質資料"""
     with app.app_context():
         try:
-            print("🔄 [定時更新] 正在抓取最新空氣品質資料...")
-            fetch_live_aqi_csv_data()
-            print("✅ [定時更新] 資料更新完成！")
+            print("🔄 [定時更新] 開始執行...")
+            success = fetch_live_aqi_csv_data()
+            if success:
+                print("✅ [定時更新] 資料更新成功！")
+            else:
+                print("⚠️ [定時更新] 更新失敗")
         except Exception as e:
-            print(f"❌ [定時更新] 失敗: {e}")
+            print(f"❌ [定時更新] 發生錯誤: {e}")
 
-# 每 10 分鐘更新一次（可自行調整）
-scheduler.add_job(update_aqi_data, 'interval', minutes=10, id='update_aqi')
+# 每 30 分鐘更新一次（可改成 60）
+scheduler.add_job(update_aqi_data, 'interval', minutes=30, id='update_aqi')
 scheduler.start()
 
-# 確保 Render 關閉時正確結束 scheduler
+# 確保程式結束時關閉 scheduler
 atexit.register(lambda: scheduler.shutdown(wait=False))
 
 # ====================== 啟動時先更新一次 ======================
@@ -49,12 +53,14 @@ with app.app_context():
 # ====================== 路由 ======================
 @app.route('/')
 def home():
+    # 取得所有縣市
     all_counties = db.session.query(AirQualityRecord.county).distinct().all()
     county_list = [c[0] for c in all_counties if c[0]]
     county_list.sort()
 
     selected_county = request.args.get('county', '').strip()
 
+    # 查詢資料
     if selected_county:
         records = AirQualityRecord.query.filter_by(county=selected_county)\
                     .order_by(AirQualityRecord.aqi.desc()).all()
@@ -69,6 +75,7 @@ def home():
 
     avg_aqi = round(avg_stats[0], 1) if avg_stats and avg_stats[0] is not None else 0
     
+    # 取得最新更新時間
     time_record = AirQualityRecord.query.first()
     update_time = time_record.publishtime if time_record else "未知"
 
@@ -85,9 +92,12 @@ def home():
 
 @app.route('/update')
 def manual_update():
-    """手動強制更新路由（方便測試）"""
+    """手動強制更新"""
     update_aqi_data()
-    return "✅ 空氣品質資料已強制更新！<br><a href='/'>← 返回首頁</a>"
+    return """
+    ✅ 空氣品質資料已強制更新！<br><br>
+    <a href='/'>← 返回首頁</a>
+    """
 
 
 if __name__ == '__main__':
