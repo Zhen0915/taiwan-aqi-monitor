@@ -24,7 +24,7 @@ def safe_int(value, default=0):
 
 # 💡 新增：讓店長自己具備採購功能
 def auto_fetch_data_right_now():
-    csv_url = "https://data.moenv.gov.tw/api/v2/aqx_p_432?api_key=e8dd42e6-9b8b-43f8-983e-e86bc6a31c3f&limit=1000&sort=ImportDate%20desc&format=CSV"
+    csv_url = "https://data.moenv.gov.tw/api/v2/aqx_p_432?api_key=e75b1660-e564-4107-aad5-a8be1f905dd9&limit=1000&sort=Import Datedesc&format=CSV"
     try:
         response = requests.get(csv_url, timeout=10, verify=False)
         if response.status_code == 200:
